@@ -18,7 +18,7 @@ module.exports = {
     exists = await app.sdb.exists('Chain', { link })
     if (exists) return 'Chain link already registered'
 
-    app.sdb.create('Account', { address: chainAddress, xas: 0, name: null })
+    app.sdb.create('Account', { address: chainAddress, aec: 0, name: null })
     app.sdb.create('Chain', {
       tid,
       address: chainAddress,
@@ -61,7 +61,7 @@ module.exports = {
     if (!chain) return 'Chain not found'
 
     const senderId = this.sender.address
-    if (currency !== 'XAS') {
+    if (currency !== 'AEC') {
       const balance = app.balances.get(senderId, currency)
       if (balance.lt(amount)) return 'Insufficient balance'
 
@@ -69,13 +69,13 @@ module.exports = {
     } else {
       amount = Number(amount)
       const sender = this.sender
-      if (sender.xas < amount) return 'Insufficient balance'
-      sender.xas -= amount
+      if (sender.aec < amount) return 'Insufficient balance'
+      sender.aec -= amount
 
       const chainAccount = await app.sdb.load('Account', chain.address)
-      chainAccount.xas += amount
-      app.sdb.update('Account', { xas: sender.xas }, { address: sender.address })
-      app.sdb.update('Account', { xas: chainAccount.xas }, { address: chainAccount.address })
+      chainAccount.aec += amount
+      app.sdb.update('Account', { aec: sender.aec }, { address: sender.address })
+      app.sdb.update('Account', { aec: chainAccount.aec }, { address: chainAccount.address })
     }
     app.sdb.create('Deposit', {
       tid: this.trs.id,
@@ -101,27 +101,27 @@ module.exports = {
     const exists = await app.sdb.exists('Withdrawal', { chain: chainName, oid })
     if (exists) return 'Chain withdrawal already processed'
 
-    if (currency !== 'XAS') {
+    if (currency !== 'AEC') {
       const balance = app.balances.get(chain.address, currency)
       if (balance.lt(amount)) return 'Insufficient balance'
       app.balances.transfer(currency, amount, chain.address, recipient)
     } else {
       amount = Number(amount)
       const sender = this.sender
-      if (sender.xas < amount) return 'Insufficient balance'
-      sender.xas -= amount
+      if (sender.aec < amount) return 'Insufficient balance'
+      sender.aec -= amount
       const account = await app.sdb.load('Account', recipient)
       if (!account) {
         app.sdb.create('Account', {
           address: recipient,
-          xas: amount,
+          aec: amount,
           name: null,
         })
       } else {
-        account.xas += amount
+        account.aec += amount
       }
-      app.sdb.update('Account', { xas: sender.xas }, { address: sender.address })
-      app.sdb.update('Account', { xas: account.xas }, { address: account.address })
+      app.sdb.update('Account', { aec: sender.aec }, { address: sender.address })
+      app.sdb.update('Account', { aec: account.aec }, { address: account.address })
     }
     app.sdb.create('Withdrawal', {
       tid: this.trs.id,

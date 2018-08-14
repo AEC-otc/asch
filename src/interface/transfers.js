@@ -73,7 +73,7 @@ module.exports = (router) => {
       })
       const assetNames = new Set()
       for (const t of transfers) {
-        if (t.currency !== 'XAS') {
+        if (t.currency !== 'AEC') {
           assetNames.add(t.currency)
         }
       }
@@ -81,7 +81,7 @@ module.exports = (router) => {
       const tids = transfers.map(t => t.tid)
       const trsMap = await getTransactionMap(tids)
       for (const t of transfers) {
-        if (t.currency !== 'XAS') {
+        if (t.currency !== 'AEC') {
           t.asset = assetMap.get(t.currency)
         }
         t.transaction = trsMap.get(t.tid)
