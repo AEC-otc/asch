@@ -50,8 +50,8 @@ module.exports = {
 
     let recipientAccount
     // Validate recipient is valid address
-    if (recipient && (app.util.address.isNormalAddress(recipient) ||
-                      app.util.address.isGroupAddress(recipient))) {
+    if (recipient && (app.util.address.isNormalAddress(recipient)
+                    || app.util.address.isGroupAddress(recipient))) {
       recipientAccount = await app.sdb.load('Account', recipient)
       if (recipientAccount) {
         app.sdb.increase('Account', { aec: amount }, { address: recipientAccount.address })
@@ -120,7 +120,9 @@ module.exports = {
     const senderId = this.sender.address
     app.sdb.lock(`basic.account@${senderId}`)
 
-    const MIN_LOCK_HEIGHT = 8640 * 30
+    // const MIN_LOCK_HEIGHT = 8640 * 30
+    // 60/15 * 60 * 24 = 5760
+    const MIN_LOCK_HEIGHT = 5760 * 30
     const sender = this.sender
     if (sender.isAgent) return 'Agent account cannot lock'
     if (sender.aec - 100000000 < amount) return 'Insufficient balance'

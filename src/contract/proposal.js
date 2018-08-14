@@ -74,7 +74,8 @@ async function validateGatewayRegister(content/* , context */) {
       || content.minimumMembers > 33) {
     throw new Error('Invalid gateway member limit')
   }
-  if (!Number.isInteger(content.updateInterval) || content.updateInterval < 8640) {
+  // if (!Number.isInteger(content.updateInterval) || content.updateInterval < 8640) {
+  if (!Number.isInteger(content.updateInterval) || content.updateInterval < 5760) {
     throw new Error('Invalid gateway update interval')
   }
   const { symbol, desc, precision } = content.currency
@@ -135,7 +136,8 @@ module.exports = {
     if (desc.length > 4096) return 'Invalid proposal description'
     if (VALID_TOPICS.indexOf(topic) === -1) return 'Invalid proposal topic'
     if (!Number.isInteger(endHeight) || endHeight < 0) return 'EndHeight should be positive integer'
-    if (endHeight < this.block.height + 8640) return 'Invalid proposal finish date'
+    // if (endHeight < this.block.height + 8640) return 'Invalid proposal finish date'
+    if (endHeight < this.block.height + 5760) return 'Invalid proposal finish date'
 
     if (topic === 'gateway_register') {
       await validateGatewayRegister(content, this)
@@ -166,7 +168,8 @@ module.exports = {
     if (!app.isCurrentBookkeeper(this.sender.address)) return 'Permission denied'
     const proposal = await app.sdb.findOne('Proposal', { condition: { tid: pid } })
     if (!proposal) return 'Proposal not found'
-    if (this.block.height - proposal.height > 8640 * 30) return 'Proposal expired'
+    // if (this.block.height - proposal.height > 8640 * 30) return 'Proposal expired'
+    if (this.block.height - proposal.height > 5760 * 30) return 'Proposal expired'
     const exists = await app.sdb.exists('ProposalVote', { voter: this.sender.address, pid })
     if (exists) return 'Already voted'
     app.sdb.create('ProposalVote', {
