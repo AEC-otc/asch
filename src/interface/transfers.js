@@ -100,8 +100,8 @@ module.exports = (router) => {
         if (pos !== -1) {
           t.amount = t.amount.slice(0, pos)
         }
+        totalAmount += t.amount
       }
-      totalAmount += t.amount
     }
     return { count, totalAmount, transfers }
   })
