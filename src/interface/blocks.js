@@ -12,6 +12,7 @@ module.exports = (router) => {
       needReverse = true
       maxHeight = modules.blocks.getLastBlock().height - offset
       minHeight = (maxHeight - limit) + 1
+      minHeight = minHeight > 0 ? minHeight : 0
     } else {
       minHeight = offset
       maxHeight = (offset + limit) - 1
