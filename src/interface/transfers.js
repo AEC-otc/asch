@@ -93,6 +93,7 @@ module.exports = (router) => {
         t.transaction = trsMap.get(t.tid)
       }
     }
+    let totalAmount
     for (const t of transfers) {
       if (t.amount) {
         const pos = t.amount.indexOf('.')
@@ -100,7 +101,8 @@ module.exports = (router) => {
           t.amount = t.amount.slice(0, pos)
         }
       }
+      totalAmount += t.amount
     }
-    return { count, transfers }
+    return { count, totalAmount, transfers }
   })
 }
