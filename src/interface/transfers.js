@@ -44,6 +44,8 @@ module.exports = (router) => {
   router.get('/', async (req) => {
     const ownerId = req.query.ownerId
     const currency = req.query.currency
+    const startTimestamp = req.query.startTimestamp
+    const endTimestamp = req.query.endTimestamp
     const condition = {}
     const limit = Number(req.query.limit) || 10
     const offset = Number(req.query.offset) || 0
@@ -62,6 +64,10 @@ module.exports = (router) => {
     if (req.query.recipientId) {
       condition.recipientId = req.query.recipientId
     }
+    if (startTimestamp && endTimestamp) {
+      condition.timestamp = { $between: [startTimestamp, endTimestamp] }
+    }
+
     const count = await app.sdb.count('Transfer', condition)
     let transfers = []
     if (count > 0) {
