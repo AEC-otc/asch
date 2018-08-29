@@ -44,8 +44,6 @@ module.exports = (router) => {
   router.get('/', async (req) => {
     const ownerId = req.query.ownerId
     const currency = req.query.currency
-    const startTimestamp = req.query.startTimestamp
-    const endTimestamp = req.query.endTimestamp
     const condition = {}
     const limit = Number(req.query.limit) || 10
     const offset = Number(req.query.offset) || 0
@@ -64,10 +62,6 @@ module.exports = (router) => {
     if (req.query.recipientId) {
       condition.recipientId = req.query.recipientId
     }
-    if (startTimestamp && endTimestamp) {
-      condition.timestamp = { $between: [startTimestamp, endTimestamp] }
-    }
-
     const count = await app.sdb.count('Transfer', condition)
     let transfers = []
     if (count > 0) {
@@ -75,6 +69,49 @@ module.exports = (router) => {
         condition,
         limit,
         offset,
+        sort: { timestamp: -1 },
+      })
+      const assetNames = new Set()
+      for (const t of transfers) {
+        if (t.currency !== 'AEC') {
+          assetNames.add(t.currency)
+        }
+      }
+      const assetMap = await getAssetMap(assetNames)
+      const tids = transfers.map(t => t.tid)
+      const trsMap = await getTransactionMap(tids)
+      for (const t of transfers) {
+        if (t.currency !== 'AEC') {
+          t.asset = assetMap.get(t.currency)
+        }
+        t.transaction = trsMap.get(t.tid)
+      }
+    }
+    for (const t of transfers) {
+      if (t.amount) {
+        const pos = t.amount.indexOf('.')
+        if (pos !== -1) {
+          t.amount = t.amount.slice(0, pos)
+        }
+      }
+    }
+    return { count, transfers }
+  })
+
+  router.get('/amount', async (req) => {
+    const startTimestamp = req.query.startTimestamp
+    const endTimestamp = req.query.endTimestamp
+    const condition = {}
+    if (startTimestamp && endTimestamp) {
+      condition.timestamp = { $between: [startTimestamp, endTimestamp] }
+    }
+    condition.currency = 'AEC'
+
+    const count = await app.sdb.count('Transfer', condition)
+    let transfers = []
+    if (count > 0) {
+      transfers = await app.sdb.findAll('Transfer', {
+        condition,
         sort: { timestamp: -1 },
       })
       const assetNames = new Set()
@@ -104,6 +141,6 @@ module.exports = (router) => {
       }
     }
     const strTotalAmount = String(totalAmount)
-    return { count, strTotalAmount, transfers }
+    return { count, strTotalAmount }
   })
 }
