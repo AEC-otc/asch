@@ -103,6 +103,7 @@ module.exports = (router) => {
         totalAmount += Number(t.amount)
       }
     }
-    return { count, totalAmount, transfers }
+    const strTotalAmount = String(totalAmount)
+    return { count, strTotalAmount, transfers }
   })
 }
