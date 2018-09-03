@@ -1,8 +1,31 @@
 
+async function isProposalApproved(pid, topic) {
+  const proposal = await app.sdb.load('Proposal', pid)
+  if (!proposal) throw new Error('Proposal not found')
+
+  if (topic !== proposal.topic) {
+    throw new Error('Unexpected proposal topic')
+  }
+
+  if (proposal.activated) return 'Already activated'
+
+  const votes = await app.sdb.findAll('ProposalVote', { condition: { pid } })
+  let validVoteCount = 0
+  for (const v of votes) {
+    if (app.isCurrentBookkeeper(v.voter)) {
+      validVoteCount++
+    }
+  }
+  if (validVoteCount <= Math.ceil(101 * 0.51)) return 'Vote not enough'
+  return true
+}
+
 module.exports = {
   async registerIssuer(name, desc) {
     if (!/^[A-Za-z]{1,16}$/.test(name)) return 'Invalid issuer name'
-    if (desc.length > 4096) return 'Invalid issuer description'
+    if (!desc) return 'No issuer description was provided'
+    const descJson = JSON.stringify(desc)
+    if (descJson.length > 4096) return 'Invalid issuer description'
 
     const senderId = this.sender.address
     app.sdb.lock(`uia.registerIssuer@${senderId}`)
@@ -16,7 +39,7 @@ module.exports = {
       tid: this.trs.id,
       issuerId: senderId,
       name,
-      desc,
+      desc: descJson,
     })
     return null
   },
@@ -24,7 +47,6 @@ module.exports = {
   async registerAsset(symbol, desc, maximum, precision) {
     if (!/^[A-Z]{3,6}$/.test(symbol)) return 'Invalid symbol'
     if (desc.length > 4096) return 'Invalid asset description'
-    // if (!Number.isInteger(maximum) || maximum <= 0) return 'Maximum should be positive integer'
     if (!Number.isInteger(precision) || precision <= 0) return 'Precision should be positive integer'
     if (precision > 16 || precision < 0) return 'Invalid asset precision'
     app.validate('amount', maximum)
@@ -51,9 +73,17 @@ module.exports = {
     return null
   },
 
-  async issue(name, amount) {
+  // async issue(name, amount) {
+  async issue(pid) {
+    const proposal = await app.sdb.findOne('Proposal', { condition: { tid: pid } })
+    if (!proposal) return 'Proposal not found'
+    if (proposal.activated) return 'Proposal was already activated'
+    if (!isProposalApproved(pid, 'asset_issue')) return 'Proposal is not approved'
+    const content = JSON.parse(proposal.content)
+    const name = content.currency
+    const amount = content.amount
+
     if (!/^[A-Za-z]{1,16}.[A-Z]{3,6}$/.test(name)) return 'Invalid currency'
-    // if (!Number.isInteger(amount) || amount <= 0) return 'Amount should be positive integer'
     app.validate('amount', amount)
     app.sdb.lock(`uia.issue@${name}`)
 
@@ -68,6 +98,7 @@ module.exports = {
     app.sdb.update('Asset', { quantity: asset.quantity }, { name })
 
     app.balances.increase(this.sender.address, name, amount)
+    app.sdb.update('Proposal', { activated: 1 }, { tid: pid })
     return null
   },
 
@@ -83,8 +114,8 @@ module.exports = {
 
     let recipientAddress
     let recipientName = ''
-    if (recipient && (app.util.address.isNormalAddress(recipient) ||
-                      app.util.address.isGroupAddress(recipient))) {
+    if (recipient && (app.util.address.isNormalAddress(recipient)
+                      || app.util.address.isGroupAddress(recipient))) {
       recipientAddress = recipient
     } else {
       recipientName = recipient
