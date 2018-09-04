@@ -202,128 +202,128 @@ module.exports = {
     return null
   },
 
-  async registerGroup(name, members, min, max, m, updateInterval) {
-    app.validate('name', name)
-    // rule: min, max, m, updateInterval should be integer
-    // rule：min >=3, min < max, updateInterval > 1
-    if (!Number.isInteger(min) || min <= 0) return 'Min should be positive integer'
-    if (!Number.isInteger(max) || max <= 0) return 'Max should be positive integer'
-    if (!Number.isInteger(m) || m <= 0) return 'M should be positive integer'
-    if (!Number.isInteger(updateInterval) || updateInterval <= 0) return 'UpdateInterval should be positive integer'
+  // async registerGroup(name, members, min, max, m, updateInterval) {
+  //   app.validate('name', name)
+  //   // rule: min, max, m, updateInterval should be integer
+  //   // rule：min >=3, min < max, updateInterval > 1
+  //   if (!Number.isInteger(min) || min <= 0) return 'Min should be positive integer'
+  //   if (!Number.isInteger(max) || max <= 0) return 'Max should be positive integer'
+  //   if (!Number.isInteger(m) || m <= 0) return 'M should be positive integer'
+  //   if (!Number.isInteger(updateInterval) || updateInterval <= 0) return 'UpdateInterval should be positive integer'
 
-    if (min < 3) return 'Min should be greater than 3'
-    if (min >= max) return 'Max should be greater than min'
-    if (updateInterval < 1) return 'UpdateInterval should be greater than 1'
+  //   if (min < 3) return 'Min should be greater than 3'
+  //   if (min >= max) return 'Max should be greater than min'
+  //   if (updateInterval < 1) return 'UpdateInterval should be greater than 1'
 
-    for (const member of members) {
-      // member.weight should be integer
-      // member.address should have valid address format
-      app.validate('name', member.name)
-      if (!Number.isInteger(member.weight) || member.weight <= 0) return 'Member weight should be positive integer'
-      if (!app.util.address.isNormalAddress(member.address)) {
-        return 'Invalid member address'
-      }
-    }
+  //   for (const member of members) {
+  //     // member.weight should be integer
+  //     // member.address should have valid address format
+  //     app.validate('name', member.name)
+  //     if (!Number.isInteger(member.weight) || member.weight <= 0) return 'Member weight should be positive integer'
+  //     if (!app.util.address.isNormalAddress(member.address)) {
+  //       return 'Invalid member address'
+  //     }
+  //   }
 
-    if (await app.sdb.load('Account', { name })) return 'Name already registered'
-    const address = app.util.address.generateGroupAddress(name)
-    const account = await app.sdb.load('Account', address)
-    if (!account) {
-      app.sdb.create('Account', {
-        address,
-        name,
-        aec: 0,
-      })
-    }
-    app.sdb.create('Group', {
-      name,
-      address,
-      tid: this.trs.id,
-      min,
-      max,
-      m,
-      updateInterval,
-      createTime: this.trs.timestamp,
-    })
-    for (const member of members) {
-      app.sdb.create('GroupMember', {
-        name,
-        member: member.address,
-        weight: member.weight,
-      })
-    }
-    return null
-  },
+  //   if (await app.sdb.load('Account', { name })) return 'Name already registered'
+  //   const address = app.util.address.generateGroupAddress(name)
+  //   const account = await app.sdb.load('Account', address)
+  //   if (!account) {
+  //     app.sdb.create('Account', {
+  //       address,
+  //       name,
+  //       aec: 0,
+  //     })
+  //   }
+  //   app.sdb.create('Group', {
+  //     name,
+  //     address,
+  //     tid: this.trs.id,
+  //     min,
+  //     max,
+  //     m,
+  //     updateInterval,
+  //     createTime: this.trs.timestamp,
+  //   })
+  //   for (const member of members) {
+  //     app.sdb.create('GroupMember', {
+  //       name,
+  //       member: member.address,
+  //       weight: member.weight,
+  //     })
+  //   }
+  //   return null
+  // },
 
-  async registerAgent() {
-    const senderId = this.sender.address
-    app.sdb.lock(`basic.account@${senderId}`)
-    const sender = this.sender
-    if (sender.role) return 'Agent already have a role'
-    if (!sender.name) return 'Agent must have a name'
-    if (sender.isLocked) return 'Locked account cannot be agent'
+  // async registerAgent() {
+  //   const senderId = this.sender.address
+  //   app.sdb.lock(`basic.account@${senderId}`)
+  //   const sender = this.sender
+  //   if (sender.role) return 'Agent already have a role'
+  //   if (!sender.name) return 'Agent must have a name'
+  //   if (sender.isLocked) return 'Locked account cannot be agent'
 
-    const voteExist = await app.sdb.exists('Vote', { address: senderId })
-    if (voteExist) return 'Account already voted'
+  //   const voteExist = await app.sdb.exists('Vote', { address: senderId })
+  //   if (voteExist) return 'Account already voted'
 
-    sender.role = app.AccountRole.AGENT
-    sender.isAgent = 1
-    app.sdb.create('Agent', {
-      name: sender.name,
-      tid: this.trs.id,
-      timestamp: this.trs.timestamp,
-    })
-    app.sdb.update('Account', sender, { address: senderId })
-    return null
-  },
+  //   sender.role = app.AccountRole.AGENT
+  //   sender.isAgent = 1
+  //   app.sdb.create('Agent', {
+  //     name: sender.name,
+  //     tid: this.trs.id,
+  //     timestamp: this.trs.timestamp,
+  //   })
+  //   app.sdb.update('Account', sender, { address: senderId })
+  //   return null
+  // },
 
-  async setAgent(agent) {
-    const senderId = this.sender.address
-    app.sdb.lock(`basic.account@${senderId}`)
-    const sender = this.sender
-    if (sender.isAgent) return 'Agent cannot set agent'
-    if (sender.agent) return 'Agent already set'
-    if (!sender.isLocked) return 'Account is not locked'
+  // async setAgent(agent) {
+  //   const senderId = this.sender.address
+  //   app.sdb.lock(`basic.account@${senderId}`)
+  //   const sender = this.sender
+  //   if (sender.isAgent) return 'Agent cannot set agent'
+  //   if (sender.agent) return 'Agent already set'
+  //   if (!sender.isLocked) return 'Account is not locked'
 
-    app.validate('name', agent)
+  //   app.validate('name', agent)
 
-    const agentAccount = await app.sdb.load('Account', { name: agent })
-    if (!agentAccount) return 'Agent account not found'
-    if (!agentAccount.isAgent) return 'Not an agent'
+  //   const agentAccount = await app.sdb.load('Account', { name: agent })
+  //   if (!agentAccount) return 'Agent account not found'
+  //   if (!agentAccount.isAgent) return 'Not an agent'
 
-    const voteExist = await app.sdb.exists('Vote', { address: senderId })
-    if (voteExist) return 'Account already voted'
+  //   const voteExist = await app.sdb.exists('Vote', { address: senderId })
+  //   if (voteExist) return 'Account already voted'
 
-    sender.agent = agent
-    app.sdb.update('Account', { agent: sender.agent }, { address: senderId })
-    app.sdb.increase('Account', { agentWeight: sender.weight }, { address: agentAccount.address })
+  //   sender.agent = agent
+  //   app.sdb.update('Account', { agent: sender.agent }, { address: senderId })
+  //   app.sdb.increase('Account', { agentWeight: sender.weight }, { address: agentAccount.address })
 
-    const agentVoteList = await app.sdb.findAll('Vote', { condition: { address: agentAccount.address } })
-    if (agentVoteList && agentVoteList.length > 0 && sender.weight > 0) {
-      for (const voteItem of agentVoteList) {
-        app.sdb.increase('Delegate', { votes: sender.weight }, { name: voteItem.delegate })
-      }
-    }
-    app.sdb.create('AgentClientele', {
-      agent,
-      clientele: senderId,
-      tid: this.trs.id,
-    })
-    return null
-  },
+  //   const agentVoteList = await app.sdb.findAll('Vote', { condition: { address: agentAccount.address } })
+  //   if (agentVoteList && agentVoteList.length > 0 && sender.weight > 0) {
+  //     for (const voteItem of agentVoteList) {
+  //       app.sdb.increase('Delegate', { votes: sender.weight }, { name: voteItem.delegate })
+  //     }
+  //   }
+  //   app.sdb.create('AgentClientele', {
+  //     agent,
+  //     clientele: senderId,
+  //     tid: this.trs.id,
+  //   })
+  //   return null
+  // },
 
-  async cancelAgent() {
-    const senderId = this.sender.address
-    app.sdb.lock(`basic.account@${senderId}`)
-    const sender = this.sender
-    if (!sender.agent) return 'Agent is not set'
+  // async cancelAgent() {
+  //   const senderId = this.sender.address
+  //   app.sdb.lock(`basic.account@${senderId}`)
+  //   const sender = this.sender
+  //   if (!sender.agent) return 'Agent is not set'
 
-    const agentAccount = await app.sdb.load('Account', { name: sender.agent })
-    if (!agentAccount) return 'Agent account not found'
+  //   const agentAccount = await app.sdb.load('Account', { name: sender.agent })
+  //   if (!agentAccount) return 'Agent account not found'
 
-    await doCancelAgent(sender, agentAccount)
-    return null
-  },
+  //   await doCancelAgent(sender, agentAccount)
+  //   return null
+  // },
 
   async registerDelegate() {
     const senderId = this.sender.address
